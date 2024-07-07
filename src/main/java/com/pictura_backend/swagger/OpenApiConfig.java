@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import org.springframework.context.annotation.Configuration;
 
-
 @Configuration
 @OpenAPIDefinition(info = @Info(title = "Pictura#", version = "1.0",
         description = "REST API description of Pictura#",
@@ -20,4 +19,5 @@ import org.springframework.context.annotation.Configuration;
         @SecurityScheme(name = "bearerToken", type = SecuritySchemeType.HTTP,
                 scheme = "bearer", bearerFormat = "JWT")
 })
-public class OpenApiConfig { }
+public class OpenApiConfig {
+}

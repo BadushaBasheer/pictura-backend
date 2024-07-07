@@ -1,8 +1,10 @@
 package com.pictura_backend.dto;
 
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
 public class UserDTO {
 
     private Long id;

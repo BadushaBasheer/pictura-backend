@@ -5,5 +5,5 @@ import com.pictura_backend.dto.UserDTO;
 
 public interface AuthService {
 
-    UserDTO createUser(RegisterDTO registerDTO);
+    UserDTO registerUser(RegisterDTO registerDTO);
 }

@@ -1,16 +1,18 @@
 package com.pictura_backend.entities;
 
+import org.springframework.security.core.GrantedAuthority;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "roles")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Role {
+@Table(name = "roles")
+public class Role implements GrantedAuthority {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,4 +21,9 @@ public class Role {
 
     @Column(nullable = false, unique = true)
     private String name;
+
+    @Override
+    public String getAuthority() {
+        return name;
+    }
 }

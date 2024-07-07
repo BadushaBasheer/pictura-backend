@@ -2,12 +2,14 @@ package com.pictura_backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
-public class SpringJwtApplication {
+@EnableJpaAuditing
+public class PicturaApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(SpringJwtApplication.class, args);
+		SpringApplication.run(PicturaApplication.class, args);
 	}
 
 }

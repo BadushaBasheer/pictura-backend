@@ -27,7 +27,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Transactional
     @Override
-    public UserDTO createUser(RegisterDTO registerDTO) {
+    public UserDTO registerUser(RegisterDTO registerDTO) {
         User user = new User();
         user.setUsername(registerDTO.getName());
         user.setEmail(registerDTO.getEmail());

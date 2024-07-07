@@ -6,8 +6,9 @@ import com.pictura_backend.dto.UserDTO;
 import com.pictura_backend.response.LoginResponse;
 import com.pictura_backend.services.auth.AuthService;
 import com.pictura_backend.services.jwt.UserDetailsServiceImpl;
-import com.pictura_backend.util.JwtUtil;
+import com.pictura_backend.services.jwt.JwtService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,11 +18,10 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 
@@ -31,13 +31,15 @@ public class AuthenticationController {
 
     private final static Logger logger = LoggerFactory.getLogger(AuthenticationController.class);
 
-    private final JwtUtil jwtUtil;
+    private final JwtService jwtService;
 
     private final AuthService authService;
 
     private final UserDetailsServiceImpl userDetailsService;
 
     private final AuthenticationManager authenticationManager;
+
+
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> createAuthenticationToken(@RequestBody LoginDTO loginDTO, HttpServletResponse response) throws BadCredentialsException, DisabledException, UsernameNotFoundException, IOException, IOException {
@@ -52,19 +54,30 @@ public class AuthenticationController {
         }
         final UserDetails userDetails = userDetailsService.loadUserByUsername(loginDTO.getEmail());
 
-        final String jwtToken = jwtUtil.generateToken(userDetails.getUsername());
+        final String jwtToken = jwtService.generateToken(userDetails.getUsername());
 
-        LoginResponse loginResponse = new LoginResponse(jwtToken, jwtUtil.getExpirationTime());
+        LoginResponse loginResponse = new LoginResponse(jwtToken, jwtService.getExpirationTime());
         return ResponseEntity.ok(loginResponse);
 
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Object> signupUser(@RequestBody RegisterDTO registerDTO) {
-        UserDTO createdUser = authService.createUser(registerDTO);
+    public ResponseEntity<Object> signupUser(@RequestBody @Valid RegisterDTO registerDTO) {
+        UserDTO createdUser = authService.registerUser(registerDTO);
         if (createdUser == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not created, please try again later!");
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestHeader("Authorization") String token) {
+        if (token != null && token.startsWith("Bearer ")) {
+            SecurityContextHolder.clearContext();
+            logger.info("User logged out and token invalidated");
+            return ResponseEntity.ok("Logout successful");
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid token");
+        }
     }
 }
