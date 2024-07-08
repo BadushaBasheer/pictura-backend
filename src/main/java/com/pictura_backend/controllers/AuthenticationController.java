@@ -41,7 +41,6 @@ public class AuthenticationController {
     private final AuthenticationManager authenticationManager;
 
 
-
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> createAuthenticationToken(@RequestBody LoginDTO loginDTO, HttpServletResponse response) throws BadCredentialsException, DisabledException, UsernameNotFoundException, IOException, IOException {
         try {
@@ -55,7 +54,7 @@ public class AuthenticationController {
         }
         final UserDetails userDetails = userDetailsService.loadUserByUsername(loginDTO.getEmail());
 
-        final String jwtToken = jwtService.generateToken(userDetails.getUsername());
+        final String jwtToken = jwtService.generateToken(userDetails);
 
         LoginResponse loginResponse = new LoginResponse(jwtToken, jwtService.getExpirationTime());
         return ResponseEntity.ok(loginResponse);
@@ -80,6 +79,11 @@ public class AuthenticationController {
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid token");
         }
+    }
+
+    @PostMapping("/authenticate")
+    public ResponseEntity<LoginResponse> authenticate(@RequestBody @Valid LoginDTO loginDTO) {
+        return ResponseEntity.ok(authService.authenticate(loginDTO));
     }
 
     @GetMapping("/activate-account")

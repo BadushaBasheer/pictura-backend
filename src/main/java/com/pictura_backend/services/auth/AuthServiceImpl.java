@@ -1,32 +1,42 @@
 package com.pictura_backend.services.auth;
 
+import com.pictura_backend.dto.LoginDTO;
 import com.pictura_backend.dto.RegisterDTO;
 import com.pictura_backend.dto.UserDTO;
-import com.pictura_backend.entities.EmailTemplateName;
+import com.pictura_backend.util.EmailTemplateName;
 import com.pictura_backend.entities.Role;
 import com.pictura_backend.entities.Token;
 import com.pictura_backend.entities.User;
 import com.pictura_backend.repositories.RoleRepository;
 import com.pictura_backend.repositories.TokenRepository;
 import com.pictura_backend.repositories.UserRepository;
+import com.pictura_backend.response.LoginResponse;
+import com.pictura_backend.services.jwt.JwtService;
 import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
+
+    private final EmailService emailService;
+
+    private final JwtService jwtService;
 
     private final UserRepository userRepository;
 
@@ -36,7 +46,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final TokenRepository tokenRepository;
 
-    private final EmailService emailService;
+    private final AuthenticationManager authenticationManager;
 
     @Value("${mailing.frontend.activation-url}")
     private String activationUrl;
@@ -50,7 +60,7 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
         user.setCreatedDate(LocalDateTime.now());
         user.setAccountLocked(false);
-        user.setEnabled(true);
+        user.setEnabled(false);
 
         Role userRole = roleRepository.findByName("ROLE_USER");  // Fetch the "ROLE_USER" role from the database
         if (userRole == null) {
@@ -76,7 +86,7 @@ public class AuthServiceImpl implements AuthService {
         return userDTO;
     }
 
-    @Transactional
+//    @Transactional
     public void activateAccount(String token) throws MessagingException {
         Token savedToken = tokenRepository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid token"));
@@ -93,6 +103,22 @@ public class AuthServiceImpl implements AuthService {
         savedToken.setValidatedAt(LocalDateTime.now());
         tokenRepository.save(savedToken);
     }
+
+    @Override
+    public LoginResponse authenticate(LoginDTO loginDTO) {
+        var auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        loginDTO.getEmail(),
+                        loginDTO.getPassword()
+                )
+        );
+        var claims = new HashMap<String, Object>();
+        var user = ((User)auth.getPrincipal());
+        claims.put("username", user.getUsername());
+        var jwtToken = jwtService.generateToken(claims, user);
+        return LoginResponse.builder().token(jwtToken).build();
+    }
+
 
     private String generateAndSaveActivationToken(User user) {
         // Generate a token

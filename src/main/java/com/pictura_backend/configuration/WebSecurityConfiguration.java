@@ -35,7 +35,6 @@ public class WebSecurityConfiguration {
 
     private final AuthenticationProvider authenticationProvider;
 
-
     private static final String[] AUTH_WHITELIST = {
             "/api/v1/auth/**",
             "/v3/api-docs/**",
@@ -52,8 +51,12 @@ public class WebSecurityConfiguration {
                 .authorizeHttpRequests(
                         authorize -> authorize
                                 .requestMatchers(AUTH_WHITELIST).permitAll()
-                                .requestMatchers("/register", "/login", "/logout","/activate-account").permitAll()
+                                .requestMatchers("/register", "/login", "/logout","/authenticate","/activate-account").permitAll()
                                 .requestMatchers("/api/**").authenticated()
+                                .requestMatchers("/**", "/userDetail", "/search", "/follow/*/*")
+                                .authenticated()
+                                .requestMatchers("/posts", "/posts/**", "/posts/user/**", "/posts/like/*/user/*")
+                                .authenticated()
                                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

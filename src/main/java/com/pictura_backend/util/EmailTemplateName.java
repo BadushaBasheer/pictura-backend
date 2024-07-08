@@ -1,4 +1,4 @@
-package com.pictura_backend.entities;
+package com.pictura_backend.util;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

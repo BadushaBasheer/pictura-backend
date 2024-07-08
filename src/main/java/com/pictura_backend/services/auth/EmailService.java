@@ -1,6 +1,6 @@
 package com.pictura_backend.services.auth;
 
-import com.pictura_backend.entities.EmailTemplateName;
+import com.pictura_backend.util.EmailTemplateName;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
