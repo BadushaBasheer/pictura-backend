@@ -7,6 +7,7 @@ import com.pictura_backend.response.LoginResponse;
 import com.pictura_backend.services.auth.AuthService;
 import com.pictura_backend.services.jwt.UserDetailsServiceImpl;
 import com.pictura_backend.services.jwt.JwtService;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -62,7 +63,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Object> signupUser(@RequestBody @Valid RegisterDTO registerDTO) {
+    public ResponseEntity<Object> signupUser(@RequestBody @Valid RegisterDTO registerDTO) throws MessagingException {
         UserDTO createdUser = authService.registerUser(registerDTO);
         if (createdUser == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not created, please try again later!");
@@ -79,5 +80,10 @@ public class AuthenticationController {
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid token");
         }
+    }
+
+    @GetMapping("/activate-account")
+    public void confirm(@RequestParam String token) throws MessagingException {
+        authService.activateAccount(token);
     }
 }

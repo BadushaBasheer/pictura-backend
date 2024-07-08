@@ -3,10 +3,10 @@ services:
         container_name: mysql-pictura
         image: mysql:latest
         environment:
-            MYSQL_ROOT_PASSWORD: password
-            MYSQL_DATABASE: pictura
             MYSQL_USER: username
             MYSQL_PASSWORD: password
+            MYSQL_ROOT_PASSWORD: password
+            MYSQL_DATABASE: pictura
         volumes:
             - mysql-data:/var/lib/mysql
         ports:

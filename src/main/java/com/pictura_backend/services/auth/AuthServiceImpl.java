@@ -2,16 +2,25 @@ package com.pictura_backend.services.auth;
 
 import com.pictura_backend.dto.RegisterDTO;
 import com.pictura_backend.dto.UserDTO;
+import com.pictura_backend.entities.EmailTemplateName;
 import com.pictura_backend.entities.Role;
+import com.pictura_backend.entities.Token;
 import com.pictura_backend.entities.User;
 import com.pictura_backend.repositories.RoleRepository;
+import com.pictura_backend.repositories.TokenRepository;
 import com.pictura_backend.repositories.UserRepository;
+import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -25,13 +34,23 @@ public class AuthServiceImpl implements AuthService {
 
     private final PasswordEncoder passwordEncoder;
 
+    private final TokenRepository tokenRepository;
+
+    private final EmailService emailService;
+
+    @Value("${mailing.frontend.activation-url}")
+    private String activationUrl;
+
     @Transactional
     @Override
-    public UserDTO registerUser(RegisterDTO registerDTO) {
+    public UserDTO registerUser(RegisterDTO registerDTO) throws MessagingException {
         User user = new User();
         user.setUsername(registerDTO.getName());
         user.setEmail(registerDTO.getEmail());
         user.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
+        user.setCreatedDate(LocalDateTime.now());
+        user.setAccountLocked(false);
+        user.setEnabled(true);
 
         Role userRole = roleRepository.findByName("ROLE_USER");  // Fetch the "ROLE_USER" role from the database
         if (userRole == null) {
@@ -50,9 +69,73 @@ public class AuthServiceImpl implements AuthService {
         userDTO.setEmail(createdUser.getEmail());
         userDTO.setName(createdUser.getUsername());
 
+        sendValidationEmail(user);
+
         logger.info("User created successfully: {}", userDTO.getEmail());
 
         return userDTO;
     }
+
+    @Transactional
+    public void activateAccount(String token) throws MessagingException {
+        Token savedToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid token"));
+        if (LocalDateTime.now().isAfter(savedToken.getExpiresAt())) {
+            sendValidationEmail(savedToken.getUser());
+            throw new RuntimeException("Activation token has expired. A new token has been send to the same email address");
+        }
+
+        var user = userRepository.findById(savedToken.getUser().getId())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        savedToken.setValidatedAt(LocalDateTime.now());
+        tokenRepository.save(savedToken);
+    }
+
+    private String generateAndSaveActivationToken(User user) {
+        // Generate a token
+        String generatedToken = generateActivationCode(6);
+        var token = Token.builder()
+                .token(generatedToken)
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusMinutes(15))
+                .user(user)
+                .build();
+        tokenRepository.save(token);
+
+        return generatedToken;
+    }
+
+    private void sendValidationEmail(User user) throws MessagingException {
+        var newToken = generateAndSaveActivationToken(user);
+
+        emailService.sendEmail(
+                user.getEmail(),
+                user.getUsername(),
+                EmailTemplateName.ACTIVATE_ACCOUNT,
+                activationUrl,
+                newToken,
+                "Account activation"
+        );
+    }
+
+    private String generateActivationCode(int length) {
+        String characters = "0123456789";
+        StringBuilder codeBuilder = new StringBuilder();
+
+        SecureRandom secureRandom = new SecureRandom();
+
+        for (int i = 0; i < length; i++) {
+            int randomIndex = secureRandom.nextInt(characters.length());
+            codeBuilder.append(characters.charAt(randomIndex));
+        }
+
+        return codeBuilder.toString();
+    }
+    //----------------------------------------
+
+
 
 }

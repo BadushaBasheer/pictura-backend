@@ -29,7 +29,7 @@ import java.util.List;
 @EnableMethodSecurity(securedEnabled = true)
 public class WebSecurityConfiguration {
 
-    private final WebClient userInfoClient;
+//    private final WebClient userInfoClient;
 
     private final JwtRequestFilter requestFilter;
 
@@ -52,12 +52,12 @@ public class WebSecurityConfiguration {
                 .authorizeHttpRequests(
                         authorize -> authorize
                                 .requestMatchers(AUTH_WHITELIST).permitAll()
-                                .requestMatchers("/register", "/login", "/logout").permitAll()
+                                .requestMatchers("/register", "/login", "/logout","/activate-account").permitAll()
                                 .requestMatchers("/api/**").authenticated()
                                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .oauth2ResourceServer(c -> c.opaqueToken(Customizer.withDefaults()))
+//                .oauth2ResourceServer(c -> c.opaqueToken(Customizer.withDefaults()))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(requestFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
@@ -77,8 +77,8 @@ public class WebSecurityConfiguration {
         return source;
     }
 
-    @Bean
-    public OpaqueTokenIntrospector introspector() {
-        return new GoogleOpaqueTokenIntrospector(userInfoClient);
-    }
+//    @Bean
+//    public OpaqueTokenIntrospector introspector() {
+//        return new GoogleOpaqueTokenIntrospector(userInfoClient);
+//    }
 }
